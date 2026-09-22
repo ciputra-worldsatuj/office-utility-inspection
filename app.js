@@ -68,24 +68,7 @@ function initDB() {
 }
 
 // FETCH DATA USER & UTILITY
-async function loadInitialData() {
-  try {
-    const res = await fetch(`${GAS_URL}?action=getInitialData`);
-    const json = await res.json();
-    if (json.status === "SUCCESS") {
-      localStorage.setItem("eng_users", JSON.stringify(json.users));
-      localStorage.setItem("eng_utilities", JSON.stringify(json.utilities));
-      renderDropdowns(json.users, json.utilities);
-      return;
-    }
-  } catch (e) {
-    console.log("Offline mode, membaca Master Data dari memori lokal...");
-  }
 
-  const cachedUsers = JSON.parse(localStorage.getItem("eng_users") || "[]");
-  const cachedUtils = JSON.parse(localStorage.getItem("eng_utilities") || "[]");
-  renderDropdowns(cachedUsers, cachedUtils);
-}
 
 function renderDropdowns(users, utilities) {
   const selectUser = document.getElementById("petugas");
