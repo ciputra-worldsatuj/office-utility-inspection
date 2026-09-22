@@ -191,40 +191,131 @@ function updatePendingCount() {
     document.getElementById("pending-count").innerText = `💾 Data Lokal: ${req.result}`;
   };
 }
+// ==========================================
+// 1. HELPER STATUS KONEKSI (ONLINE / OFFLINE)
+// ==========================================
+function setOnlineStatus(isOnline) {
+  const statusBadge = document.getElementById("connection-status");
+  if (statusBadge) {
+    if (isOnline) {
+      statusBadge.className = "status-badge online";
+      statusBadge.innerText = "🟢 ONLINE";
+    } else {
+      statusBadge.className = "status-badge offline";
+      statusBadge.innerText = "🔴 OFFLINE";
+    }
+  }
+}
 
-// SINKRONISASI
+// ==========================================
+// 2. FETCH DATA MASTER + AUTO DETECT ONLINE
+// ==========================================
+async function loadInitialData() {
+  try {
+    const res = await fetch(`${GAS_URL}?action=getInitialData`);
+    const json = await res.json();
+    
+    if (json.status === "SUCCESS" && json.users && json.users.length > 0) {
+      // Jika fetch sukses, otomatis ubah badge ke ONLINE
+      setOnlineStatus(true);
+      
+      localStorage.setItem("eng_users", JSON.stringify(json.users));
+      localStorage.setItem("eng_utilities", JSON.stringify(json.utilities));
+      renderDropdowns(json.users, json.utilities);
+      return;
+    }
+  } catch (e) {
+    console.warn("Gagal terhubung ke server (Offline Mode):", e);
+    setOnlineStatus(false);
+  }
+
+  // Fallback jika offline
+  let cachedUsers = JSON.parse(localStorage.getItem("eng_users") || "null");
+  let cachedUtils = JSON.parse(localStorage.getItem("eng_utilities") || "null");
+
+  if (!cachedUsers) cachedUsers = DEFAULT_USERS;
+  if (!cachedUtils) cachedUtils = DEFAULT_UTILITIES;
+
+  renderDropdowns(cachedUsers, cachedUtils);
+}
+
+// ==========================================
+// 3. SINKRONISASI DATA + INDICATOR LOADING
+// ==========================================
 async function syncData() {
+  const syncBtn = document.querySelector(".btn-sync");
+  const originalText = syncBtn ? syncBtn.innerText : "☁️ SYNC DATA";
+
   const tx = db.transaction("chiller_logs", "readonly");
   const store = tx.objectStore("chiller_logs");
   const req = store.getAll();
 
   req.onsuccess = async () => {
     const records = req.result;
+    
     if (records.length === 0) {
-      alert("Tidak ada data pending yang tersimpan.");
+      alert("ℹ️ Tidak ada data pending yang tersimpan di HP.");
       return;
     }
 
-    let success = 0;
-    for (const rec of records) {
-      try {
-        const res = await fetch(GAS_URL, {
-          method: "POST",
-          body: JSON.stringify(rec),
-          headers: { "Content-Type": "text/plain;charset=utf-8" }
-        });
-        const result = await res.json();
-        if (result.status === "SUCCESS") {
-          deleteRecord(rec.id);
-          success++;
-        }
-      } catch (e) {}
+    // ⏳ AKTIFKAN LOADING STATE PADA TOMBOL
+    if (syncBtn) {
+      syncBtn.disabled = true;
+      syncBtn.innerText = "⏳ Mengirim Data...";
+      syncBtn.style.opacity = "0.7";
     }
 
-    alert(`✅ Berhasil menyinkronkan ${success} data ke Spreadsheet!`);
+    let successCount = 0;
+    let failCount = 0;
+
+    for (const rec of records) {
+      try {
+        // Hapus ID internal IndexedDB sebelum dikirim ke Google Sheets
+        const payload = { ...rec };
+        delete payload.id;
+
+        const res = await fetch(GAS_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify(payload)
+        });
+
+        const result = await res.json();
+
+        if (result.status === "SUCCESS") {
+          deleteRecord(rec.id);
+          successCount++;
+        } else {
+          failCount++;
+        }
+      } catch (err) {
+        console.error("Gagal mengirim data:", err);
+        failCount++;
+      }
+    }
+
+    // 🔄 KEMBALIKAN TOMBOL KE STATE NORMAL
+    if (syncBtn) {
+      syncBtn.disabled = false;
+      syncBtn.innerText = originalText;
+      syncBtn.style.opacity = "1";
+    }
+
     updatePendingCount();
+
+    if (successCount > 0) {
+      setOnlineStatus(true);
+    }
+
+    // TAMPILKAN NOTIFIKASI HASIL SYNC
+    if (failCount === 0) {
+      alert(`✅ Berhasil menyinkronkan ${successCount} data ke Google Spreadsheet!`);
+    } else {
+      alert(`⚠️ Sinkronisasi Selesai.\nBerhasil: ${successCount}\nGagal: ${failCount}\n\nPastikan koneksi internet stabil untuk mencoba lagi.`);
+    }
   };
 }
+
 
 function deleteRecord(id) {
   const tx = db.transaction("chiller_logs", "readwrite");
