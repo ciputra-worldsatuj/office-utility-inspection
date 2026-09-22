@@ -1,0 +1,35 @@
+* { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 0; }
+body { background-color: #0f172a; color: #f8fafc; padding-bottom: 40px; }
+
+.header { background: #1e293b; padding: 15px; text-align: center; border-bottom: 2px solid #334155; }
+.header h2 { font-size: 1.1rem; color: #38bdf8; letter-spacing: 0.5px; }
+
+.status-badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-weight: bold; font-size: 0.75rem; margin-top: 5px; }
+.status-badge.online { background: #16a34a; color: white; }
+.status-badge.offline { background: #dc2626; color: white; }
+
+.container { padding: 15px; max-width: 550px; margin: 0 auto; }
+
+.sync-banner { background: #1e293b; padding: 12px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border: 1px solid #334155; }
+.btn-sync { background: #0284c7; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+
+.card { background: #1e293b; border-radius: 8px; padding: 15px; margin-bottom: 15px; border: 1px solid #334155; }
+.card h3 { font-size: 0.95rem; color: #38bdf8; margin-bottom: 12px; border-bottom: 1px solid #334155; padding-bottom: 6px; }
+
+.form-group { margin-bottom: 12px; }
+.form-row { display: flex; gap: 10px; }
+.form-row .form-group { flex: 1; }
+
+label { display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 4px; color: #94a3b8; }
+input, select, textarea { width: 100%; padding: 10px; border: 1px solid #475569; border-radius: 6px; background: #0f172a; color: white; font-size: 0.9rem; }
+input:focus, select:focus { outline: none; border-color: #38bdf8; }
+
+.readonly-input { background: #1e293b; color: #38bdf8; font-weight: bold; border-style: dashed; }
+
+.toggle-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #334155; }
+.switch-btn { padding: 6px 16px; border-radius: 20px; border: none; font-weight: bold; cursor: pointer; }
+.switch-btn.on { background: #22c55e; color: white; }
+.switch-btn.off { background: #64748b; color: white; }
+
+.btn-save { width: 100%; background: #16a34a; color: white; border: none; padding: 14px; border-radius: 6px; font-size: 1rem; font-weight: bold; cursor: pointer; margin-top: 10px; }
+.hidden { display: none !important; }
