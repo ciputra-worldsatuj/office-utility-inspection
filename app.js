@@ -1,4 +1,4 @@
-const GAS_URL = "MASUKKAN_URL_WEB_APP_GAS_ANDA";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbxR15tT0rsNrwW5apq4QuO5LZob3xC0VGzSUVFNXhysffJalTTnDea3P7bE5CjAw2m8cA/exec";
 let db = null;
 
 // KONVERSI MATEMATIK AUTOMATIS
