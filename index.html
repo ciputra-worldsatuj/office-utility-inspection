@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Engineering Inspection Logging</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header class="header">
+    <h2>ENGINEERING LOGGING</h2>
+    <div id="connection-status" class="status-badge offline">🔴 OFFLINE</div>
+  </header>
+
+  <main class="container">
+    
+    <!-- BANNER SYNC -->
+    <div class="sync-banner">
+      <span id="pending-count">💾 Data Lokal: 0</span>
+      <button class="btn-sync" onclick="syncData()">☁️ SYNC DATA</button>
+    </div>
+
+    <!-- 1. INFORMASI INSPEKSI -->
+    <section class="card">
+      <h3>📌 Informasi Inspeksi</h3>
+      
+      <div class="form-group">
+        <label>Petugas *</label>
+        <select id="petugas" required>
+          <option value="">-- Pilih Petugas --</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Utility Pilihan *</label>
+        <select id="utility_id" onchange="toggleUtilityForm()" required>
+          <option value="">-- Pilih Utility --</option>
+        </select>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Tanggal</label>
+          <input type="date" id="insp_date" required>
+        </div>
+        <div class="form-group">
+          <label>Jam</label>
+          <input type="time" id="insp_time" required>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. FORM KHUSUS CHILLER -->
+    <form id="chiller-form" class="hidden" onsubmit="saveChiller(event)">
+      
+      <section class="card">
+        <h3>❄️ Chiller Specification</h3>
+        <div class="form-group">
+          <label>Unit *</label>
+          <select id="ch_unit" required>
+            <option value="Chiller 400">Chiller 400</option>
+            <option value="Chiller 1000">Chiller 1000</option>
+          </select>
+        </div>
+      </section>
+
+      <!-- EVAPORATOR -->
+      <section class="card">
+        <h3>🔵 Evaporator</h3>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label>Leaving Water Temp (°F) [42 - 46]</label>
+            <input type="number" step="0.1" id="evap_leaving_f" oninput="calcTemp('evap_leaving_f', 'evap_leaving_c')">
+          </div>
+          <div class="form-group">
+            <label>Hasil (°C)</label>
+            <input type="text" id="evap_leaving_c" readonly class="readonly-input">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Return Water Temp (°F) [49 - 55]</label>
+            <input type="number" step="0.1" id="evap_return_f" oninput="calcTemp('evap_return_f', 'evap_return_c')">
+          </div>
+          <div class="form-group">
+            <label>Hasil (°C)</label>
+            <input type="text" id="evap_return_c" readonly class="readonly-input">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Small Temp. Diffr (°F) [&lt;5]</label>
+            <input type="number" step="0.1" id="evap_small_f" oninput="calcTemp('evap_small_f', 'evap_small_c')">
+          </div>
+          <div class="form-group">
+            <label>Hasil (°C)</label>
+            <input type="text" id="evap_small_c" readonly class="readonly-input">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Pressure (psig) [27 - 40]</label>
+            <input type="number" step="0.1" id="evap_press_psig" oninput="calcPressure('evap_press_psig', 'evap_press_kpag')">
+          </div>
+          <div class="form-group">
+            <label>Hasil (kPa.g)</label>
+            <input type="text" id="evap_press_kpag" readonly class="readonly-input">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Saturation (°F) [32 - 50]</label>
+            <input type="number" step="0.1" id="evap_sat_f" oninput="calcTemp('evap_sat_f', 'evap_sat_c')">
+          </div>
+          <div class="form-group">
+            <label>Hasil (°C)</label>
+            <input type="text" id="evap_sat_c" readonly class="readonly-input">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Refrigerant Temp (°F)</label>
+            <input type="number" step="0.1" id="evap_refr_f" oninput="calcTemp('evap_refr_f', 'evap_refr_c')">
+          </div>
+          <div class="form-group">
+            <label>Hasil (°C)</label>
+            <input type="text" id="evap_refr_c" readonly class="readonly-input">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Water Pressure In (kgf/cm²)</label>
+            <input type="number" step="0.1" id="evap_wp_in">
+          </div>
+          <div class="form-group">
+            <label>Water Pressure Out (kgf/cm²)</label>
+            <input type="number" step="0.1" id="evap_wp_out">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Approach Evaporator (°F)</label>
+          <input type="number" step="0.1" id="evap_approach">
+        </div>
+      </section>
+
+      <!-- CONDENSER -->
+      <section class="card">
+        <h3>🔴 Condenser</h3>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Return Water Temp (°F) [81 - 87]</label>
+            <input type="number" step="0.1" id="cond_return_f" oninput="calcTemp('cond_return_f', 'cond_return_c')">
+          </div>
+          <div class="form-group">
+            <label>Hasil (°C)</label>
+            <input type="text" id="cond_return_c" readonly class="readonly-input">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Leaving Water Temp (°F) [91 - 98]</label>
+            <input type="number" step="0.1" id="cond_leaving_f" oninput="calcTemp('cond_leaving_f', 'cond_leaving_c')">
+          </div>
+          <div class="form-group">
+            <label>Hasil (°C)</label>
+            <input type="text" id="cond_leaving_c" readonly class="readonly-input">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Saturation (°F) [83 - 115]</label>
+            <input type="number" step="0.1" id="cond_sat_f" oninput="calcTemp('cond_sat_f', 'cond_sat_c')">
+          </div>
+          <div class="form-group">
+            <label>Hasil (°C)</label>
+            <input type="text" id="cond_sat_c" readonly class="readonly-input">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Small Temp. Diffr (°F) [&lt;5]</label>
+            <input type="number" step="0.1" id="cond_small_f" oninput="calcTemp('cond_small_f', 'cond_small_c')">
+          </div>
+          <div class="form-group">
+            <label>Hasil (°C)</label>
+            <input type="text" id="cond_small_c" readonly class="readonly-input">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Pressure (psig) [90 - 130]</label>
+            <input type="number" step="0.1" id="cond_press_psig" oninput="calcPressure('cond_press_psig', 'cond_press_kpag')">
+          </div>
+          <div class="form-group">
+            <label>Hasil (kPa.g)</label>
+            <input type="text" id="cond_press_kpag" readonly class="readonly-input">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Drop Leg (°F)</label>
+            <input type="number" step="0.1" id="cond_dropleg_f" oninput="calcTemp('cond_dropleg_f', 'cond_dropleg_c')">
+          </div>
+          <div class="form-group">
+            <label>Hasil (°C)</label>
+            <input type="text" id="cond_dropleg_c" readonly class="readonly-input">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Sub Cooling (°F) [10 - 33]</label>
+            <input type="number" step="0.1" id="cond_subcool_f" oninput="calcTemp('cond_subcool_f', 'cond_subcool_c')">
+          </div>
+          <div class="form-group">
+            <label>Hasil (°C)</label>
+            <input type="text" id="cond_subcool_c" readonly class="readonly-input">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Level Refrigerant (%)</label>
+          <input type="number" step="0.1" id="cond_level_refr">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Water Pressure In (kgf/cm²)</label>
+            <input type="number" step="0.1" id="cond_wp_in">
+          </div>
+          <div class="form-group">
+            <label>Water Pressure Out (kgf/cm²)</label>
+            <input type="number" step="0.1" id="cond_wp_out">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Approach Condenser (°F)</label>
+          <input type="number" step="0.1" id="cond_approach">
+        </div>
+
+        <div class="form-group">
+          <label>Discharge Temp (°F) [83 - 115]</label>
+          <input type="number" step="0.1" id="cond_disch_temp">
+        </div>
+
+        <div class="form-group">
+          <label>Disch. Super Heat (°F)</label>
+          <input type="number" step="0.1" id="cond_disch_superheat">
+        </div>
+
+        <div class="form-group">
+          <label>VGD (Volt)</label>
+          <input type="number" step="0.1" id="cond_vgd">
+        </div>
+      </section>
+
+      <!-- COMPRESSOR & ELECTRICAL -->
+      <section class="card">
+        <h3>⚡ Compressor & Electrical</h3>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Oil Pressure (psig) [42 - 46]</label>
+            <input type="number" step="0.1" id="comp_oil_press">
+          </div>
+          <div class="form-group">
+            <label>Command Frequency (Hz) [49 - 55]</label>
+            <input type="number" step="0.1" id="comp_freq">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Oil Temperature (°F)</label>
+            <input type="number" step="0.1" id="comp_oil_temp">
+          </div>
+          <div class="form-group">
+            <label>Oil Level (%)</label>
+            <input type="number" step="0.1" id="comp_oil_level">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>HOP (psig) [27 - 40]</label>
+            <input type="number" step="0.1" id="comp_hop">
+          </div>
+          <div class="form-group">
+            <label>LOP (psig) [32 - 50]</label>
+            <input type="number" step="0.1" id="comp_lop">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Full Load Ampere (%)</label>
+            <input type="number" step="0.1" id="elec_fla">
+          </div>
+          <div class="form-group">
+            <label>Power Input (kW)</label>
+            <input type="number" step="0.1" id="elec_power">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>KWH</label>
+            <input type="number" step="0.1" id="elec_kwh">
+          </div>
+          <div class="form-group">
+            <label>Voltage (Volt)</label>
+            <input type="number" step="0.1" id="elec_voltage">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Current (Amp)</label>
+            <input type="number" step="0.1" id="elec_current">
+          </div>
+          <div class="form-group">
+            <label>SCR Temp (°F)</label>
+            <input type="number" step="0.1" id="elec_scr_temp">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Operating Hours</label>
+          <input type="number" step="0.1" id="comp_op_hours">
+        </div>
+      </section>
+
+      <!-- EQUIPMENT STATUS TOGGLES -->
+      <section class="card">
+        <h3>⚙️ Equipment Status & Note</h3>
+
+        <div class="toggle-item">
+          <span>Motor CHWP</span>
+          <button type="button" id="btn_chwp" class="switch-btn off" onclick="toggleSwitch('btn_chwp')">OFF</button>
+        </div>
+
+        <div class="toggle-item">
+          <span>Cooling Tower</span>
+          <button type="button" id="btn_ct" class="switch-btn off" onclick="toggleSwitch('btn_ct')">OFF</button>
+        </div>
+
+        <div class="toggle-item">
+          <span>Condenser Pump</span>
+          <button type="button" id="btn_cond_pump" class="switch-btn off" onclick="toggleSwitch('btn_cond_pump')">OFF</button>
+        </div>
+
+        <div class="form-group" style="margin-top:15px;">
+          <label>Status Operasional</label>
+          <select id="sys_status">
+            <option value="NORMAL">NORMAL</option>
+            <option value="WARNING">WARNING</option>
+            <option value="CRITICAL">CRITICAL</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Keterangan / Catatan Field</label>
+          <textarea id="sys_keterangan" rows="3" placeholder="Tambahkan catatan jika ada masalah..."></textarea>
+        </div>
+      </section>
+
+      <button type="submit" class="btn-save">💾 SIMPAN DATA CHILLER</button>
+    </form>
+
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
